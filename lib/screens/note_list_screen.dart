@@ -116,9 +116,12 @@ class NoteList extends StatelessWidget {
                   onTap: () {
                     FirebaseFirestore.instance.collection('notes').doc(document.id).delete().catchError((e) {
                       print(e);
-                    })
+                    });
                   },
-                  child: ,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: const Icon(Icons.delete),
+                  ),
                 ),
               ),
             );

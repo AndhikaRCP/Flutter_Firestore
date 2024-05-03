@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:notes/services/note_service.dart';
+import 'package:notes/widgets/note_dialog.dart';
 
 class NoteListScreen extends StatefulWidget {
   const NoteListScreen({super.key});
@@ -9,8 +10,6 @@ class NoteListScreen extends StatefulWidget {
 }
 
 class _NoteListScreenState extends State<NoteListScreen> {
-  final TextEditingController _titlecontroller = TextEditingController();
-  final TextEditingController _descriptioncontroller = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,86 +19,15 @@ class _NoteListScreenState extends State<NoteListScreen> {
       body: const NoteList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          confirmDialog(context);
+          showDialog(
+              context: context,
+              builder: (context) {
+                return NoteDialog();
+              });
         },
         tooltip: 'Add Note',
         child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  void confirmDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          // Content merupakan isi utama dari dialog
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Add'),
-              const Padding(
-                padding: EdgeInsets.only(top: 10.0),
-                child: Text(
-                  'Title:',
-                  textAlign: TextAlign.start,
-                ),
-              ),
-              TextField(
-                controller: _titlecontroller,
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 10.0),
-                child: Text(
-                  'Description:',
-                  textAlign: TextAlign.start,
-                ),
-              ),
-              TextField(
-                controller: _descriptioncontroller,
-              ),
-            ],
-          ),
-          // Action berisi kumpulan button
-          actions: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel')),
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  // Map<String, dynamic> newNote = {};
-                  // ini adalah alternatif dari yang di atas
-                  // Map<String, dynamic> newNote =
-                  //     new Map<String, dynamic>();
-
-                  // Cara jika belum memisahkan service dan front end
-                  // newNote['title'] = _titlecontroller.text;
-                  // newNote['description'] = _descriptioncontroller.text;
-
-                  // FirebaseFirestore.instance
-                  //     .collection('notes')
-                  //     .add(newNote)
-                  //     .whenComplete(() {
-                  //   Navigator.of(context).pop();
-                  // });
-
-                  NoteService.addNote(
-                          _titlecontroller.text, _descriptioncontroller.text)
-                      .whenComplete(() {
-                    _titlecontroller.clear();
-                    _descriptioncontroller.clear();
-                    Navigator.of(context).pop();
-                  });
-                },
-                child: const Text('Save')),
-          ],
-        );
-      },
     );
   }
 }
@@ -128,7 +56,13 @@ class NoteList extends StatelessWidget {
                 return Card(
                   child: ListTile(
                     onTap: () {
-                      showDataDialog(context, document);
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return NoteDialog(
+                              note: document,
+                            );
+                          });
                     },
                     title: Text(document['title']),
                     subtitle: Text(document['description']),
@@ -138,7 +72,7 @@ class NoteList extends StatelessWidget {
                           context: context,
                           builder: (context) {
                             return AlertDialog(
-                              content: Column(
+                              content: const Column(
                                 children: [
                                   Text('Apakah Anda ingin Menghapus Data ?'),
                                 ],
@@ -162,7 +96,6 @@ class NoteList extends StatelessWidget {
                                       //     .catchError((e) {
                                       //   print(e);
                                       // });
-
                                       NoteService.deleteNote(
                                         document['id'],
                                       );
@@ -185,79 +118,6 @@ class NoteList extends StatelessWidget {
               }).toList(),
             );
         }
-      },
-    );
-  }
-
-  void showDataDialog(BuildContext context, Map<String, dynamic> document) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        TextEditingController titlecontroller =
-            TextEditingController(text: document['title']);
-        TextEditingController descriptioncontroller =
-            TextEditingController(text: document['description']);
-        return AlertDialog(
-          title: const Text('Update Notes'),
-          // Content merupakan isi utama dari dialog
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Title:',
-                textAlign: TextAlign.start,
-              ),
-              TextField(
-                controller: titlecontroller,
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 10.0),
-                child: Text(
-                  'Description:',
-                  textAlign: TextAlign.start,
-                ),
-              ),
-              TextField(
-                controller: descriptioncontroller,
-              ),
-            ],
-          ),
-          // Action berisi kumpulan button
-          actions: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel')),
-            ),
-            ElevatedButton(
-                onPressed: () {
-                  // Map<String, dynamic> updateNote = {};
-                  // ini adalah alternatif dari yang di atas
-                  // Map<String, dynamic> newNote =
-                  //     new Map<String, dynamic>();
-                  // updateNote['title'] = titlecontroller.text;
-                  // updateNote['description'] =
-                  //     descriptioncontroller.text;
-                  // FirebaseFirestore.instance
-                  //     .collection('notes')
-                  //     .doc(document.id)
-                  //     .update(updateNote)
-                  //     .whenComplete(() {
-                  //   Navigator.of(context).pop();
-                  // });
-
-                  NoteService.updateNote(document['id'], titlecontroller.text,
-                          descriptioncontroller.text)
-                      .whenComplete(() => Navigator.of(context).pop());
-                  titlecontroller.clear();
-                  descriptioncontroller.clear();
-                },
-                child: const Text('Update')),
-          ],
-        );
       },
     );
   }

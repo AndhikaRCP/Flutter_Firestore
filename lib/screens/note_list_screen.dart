@@ -90,10 +90,11 @@ class _NoteListScreenState extends State<NoteListScreen> {
 
                   NoteService.addNote(
                           _titlecontroller.text, _descriptioncontroller.text)
-                      .whenComplete(() => Navigator.of(context).pop());
-
-                  _titlecontroller.clear();
-                  _descriptioncontroller.clear();
+                      .whenComplete(() {
+                    _titlecontroller.clear();
+                    _descriptioncontroller.clear();
+                    Navigator.of(context).pop();
+                  });
                 },
                 child: const Text('Save')),
           ],
@@ -195,8 +196,7 @@ class NoteList extends StatelessWidget {
         TextEditingController titlecontroller =
             TextEditingController(text: document['title']);
         TextEditingController descriptioncontroller =
-            TextEditingController(
-                text: document['description']);
+            TextEditingController(text: document['description']);
         return AlertDialog(
           title: const Text('Update Notes'),
           // Content merupakan isi utama dari dialog
@@ -225,8 +225,7 @@ class NoteList extends StatelessWidget {
           // Action berisi kumpulan button
           actions: [
             Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
               child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -249,13 +248,10 @@ class NoteList extends StatelessWidget {
                   //     .whenComplete(() {
                   //   Navigator.of(context).pop();
                   // });
-    
-                  NoteService.updateNote(
-                          document['id'],
-                          titlecontroller.text,
+
+                  NoteService.updateNote(document['id'], titlecontroller.text,
                           descriptioncontroller.text)
-                      .whenComplete(
-                          () => Navigator.of(context).pop());
+                      .whenComplete(() => Navigator.of(context).pop());
                   titlecontroller.clear();
                   descriptioncontroller.clear();
                 },

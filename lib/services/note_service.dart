@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:notes/models/note.dart';
 import 'package:path/path.dart' as path;
 
@@ -19,8 +20,13 @@ class NoteService {
       Reference ref = _storage
           .ref()
           .child('images/$fileName'); // <-- untuk reference lokasi upload
-      UploadTask uploadTask =
-          ref.putFile(imageFile); // <-- proses mengupload file
+      UploadTask uploadTask;
+      if (kIsWeb) {
+        uploadTask = ref.putData(await imageFile.readAsBytesSync());
+      } else {
+        uploadTask = ref.putFile(imageFile); // <-- proses mengupload file
+      }
+
       TaskSnapshot taskSnapshot =
           await uploadTask; // <-- menunggu upload file Selesai
       String downloadUrl = await taskSnapshot.ref
@@ -38,6 +44,8 @@ class NoteService {
       'image_url': note.imageUrl,
       'created_at': FieldValue.serverTimestamp(),
       'updated_at': FieldValue.serverTimestamp(),
+      'latitude': note.latitude,
+      'longitude': note.longitude
     };
     await _notesCollection.add(newNote);
   }
@@ -49,6 +57,8 @@ class NoteService {
       'image_url': note.imageUrl,
       'created_at': note.createdAt,
       'updated_at': FieldValue.serverTimestamp(),
+      'latitude': note.latitude,
+      'longitude': note.longitude
     };
 
     await _notesCollection.doc(note.id).update(updatedNote);
@@ -71,6 +81,8 @@ class NoteService {
           title: data['title'],
           description: data['description'],
           imageUrl: data['image_url'],
+          latitude: data['latitude'],
+          longitude: data['longitude'],
           createdAt: data['created_at'] != null
               ? data['created_at'] as Timestamp
               : null,

@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:notes/services/note_service.dart';
 import 'package:notes/widgets/note_dialog.dart';
+import 'package:notes/widgets/note_edit_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 
 class NoteListScreen extends StatefulWidget {
   const NoteListScreen({super.key});
 
-
   @override
   State<NoteListScreen> createState() => _NoteListScreenState();
 }
-
 
 class _NoteListScreenState extends State<NoteListScreen> {
   @override
@@ -23,12 +21,11 @@ class _NoteListScreenState extends State<NoteListScreen> {
       body: const NoteList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return const NoteDialog();
-            },
-          );
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => NoteEditScreen(),
+              ));
         },
         tooltip: 'Add Note',
         child: const Icon(Icons.add),
@@ -37,10 +34,8 @@ class _NoteListScreenState extends State<NoteListScreen> {
   }
 }
 
-
 class NoteList extends StatelessWidget {
   const NoteList({super.key});
-
 
   Future<void> _launchMaps(double latitude, double longitude) async {
     Uri googleUrl = Uri.parse(
@@ -52,7 +47,6 @@ class NoteList extends StatelessWidget {
       // Optionally, show a message to the user
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -74,12 +68,13 @@ class NoteList extends StatelessWidget {
                 return Card(
                   child: InkWell(
                     onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return NoteDialog(note: document);
-                        },
-                      );
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NoteEditScreen(
+                              note: document,
+                            ),
+                          ));
                     },
                     child: Column(
                       children: [

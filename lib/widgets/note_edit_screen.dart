@@ -1,8 +1,8 @@
-import 'dart:io';
 
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:notes/models/note.dart';
@@ -11,6 +11,7 @@ import 'package:notes/services/note_service.dart';
 
 class NoteEditScreen extends StatefulWidget {
   final Note? note;
+
   const NoteEditScreen({super.key, this.note});
 
   @override
@@ -18,30 +19,12 @@ class NoteEditScreen extends StatefulWidget {
 }
 
 class _NoteEditScreenState extends State<NoteEditScreen> {
-  Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
-  }
-
-  Future<void> _pickLocation() async {
-    final currentPosition = await LocationService.getCurrentPosition();
-    // final currentAddress = await LocationService.getAddressFromLatLng(_currentPosition!);
-    setState(() {
-      _currentPosition = currentPosition;
-      // _currentAddress = currentAddress;
-    });
-  }
-
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  File? _imageFile;
+  double? _latitude;
+  double? _longitude;
+  XFile? _imageFile;
   Position? _currentPosition;
-  String? _currentAddress;
 
   @override
   void initState() {
@@ -49,17 +32,39 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     if (widget.note != null) {
       _titleController.text = widget.note!.title;
       _descriptionController.text = widget.note!.description;
+      _latitude = widget.note?.latitude;
+      _longitude = widget.note?.longitude;
     }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = pickedFile;
+      });
+    }
+  }
+
+  Future<void> _pickLocation() async {
+    final currentPosition = await LocationService.getCurrentPosition();
+    setState(() {
+      _currentPosition = currentPosition;
+      _latitude = currentPosition?.latitude;
+      _longitude = currentPosition?.longitude;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.note == null ? 'Add Notes' : 'Update Note'),
+        title: Text(widget.note == null ? 'Add Notes' : 'Update Notes'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,22 +89,42 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 padding: EdgeInsets.only(top: 20),
                 child: Text('Image: '),
               ),
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: _imageFile != null
-                    ? Image.file(_imageFile!, fit: BoxFit.cover)
-                    : (widget.note?.imageUrl != null &&
-                            Uri.parse(widget.note!.imageUrl!).isAbsolute
-                        ? Image.network(widget.note!.imageUrl!,
-                            fit: BoxFit.cover)
-                        : Container()),
-              ),
-              // child: _imageFile != null
-              //     ? Image.file(_imageFile!, fit: BoxFit.cover)
-              //     : (widget.note?.imageUrl != null &&
-              //             Uri.parse(widget.note!.imageUrl!).isAbsolute
-              //         ? Image.network(widget.note!.imageUrl!, fit: BoxFit.cover)
-              //         : Container()),
+              _imageFile != null
+                  ? AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: kIsWeb
+                          ? CachedNetworkImage(
+                              imageUrl: _imageFile!.path,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  const Center(
+                                child: Icon(Icons.error),
+                              ),
+                            )
+                          : Image.file(
+                              File(_imageFile!.path),
+                              fit: BoxFit.cover,
+                            ),
+                    )
+                  : (widget.note?.imageUrl != null &&
+                          Uri.parse(widget.note!.imageUrl!).isAbsolute
+                      ? AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: CachedNetworkImage(
+                            imageUrl: widget.note!.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            errorWidget: (context, url, error) => const Center(
+                              child: Icon(Icons.error),
+                            ),
+                          ),
+                        )
+                      : Container()),
               TextButton(
                 onPressed: _pickImage,
                 child: const Text('Pick Image'),
@@ -108,14 +133,13 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 onPressed: _pickLocation,
                 child: const Text('Get Current Location'),
               ),
-              Text('LAT: ${_currentPosition?.latitude ?? ""}'),
-              Text('LNG: ${_currentPosition?.longitude ?? ""}'),
-              // Text('ADDRESS: ${_currentAddress ?? ""}'),
-
+              Text(
+                'Current Position: ${_latitude != null && _longitude != null ? '$_latitude, $_longitude' : 'Belum ada data lokasi'}',
+                textAlign: TextAlign.start,
+              ),
               const SizedBox(
                 height: 32.0,
               ),
-
               Row(
                 children: [
                   Padding(
@@ -140,8 +164,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         title: _titleController.text,
                         description: _descriptionController.text,
                         imageUrl: imageUrl,
-                        latitude: _currentPosition?.latitude,
-                        longitude: _currentPosition?.longitude,
+                        latitude: _latitude,
+                        longitude: _longitude,
                         createdAt: widget.note?.createdAt,
                       );
 
@@ -156,7 +180,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                     child: Text(widget.note == null ? 'Add' : 'Update'),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),
